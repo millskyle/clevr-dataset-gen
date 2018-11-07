@@ -142,9 +142,9 @@ parser.add_argument('--camera_jitter', default=0.5, type=float,
 parser.add_argument('--render_num_samples', default=512, type=int,
     help="The number of samples to use when rendering. Larger values will " +
          "result in nicer images but will cause rendering to take longer.")
-parser.add_argument('--render_min_bounces', default=8, type=int,
+parser.add_argument('--render_min_bounces', default=50, type=int,
     help="The minimum number of bounces to use for rendering.")
-parser.add_argument('--render_max_bounces', default=8, type=int,
+parser.add_argument('--render_max_bounces', default=150, type=int,
     help="The maximum number of bounces to use for rendering.")
 parser.add_argument('--render_tile_size', default=256, type=int,
     help="The tile size to use for rendering. This should not affect the " +
