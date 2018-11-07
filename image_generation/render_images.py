@@ -344,6 +344,16 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
+  num_objects = [["duck",5],["sphere",2]]
+
+  objects_to_place = []
+  for obj_name, num in num_objects:
+      for i in range(num):
+          objects_to_place.append(obj_name)
+
+  print (objects_to_place)
+  dsadasfgfds()
+
   shape_color_combos = None
   if args.shape_color_combos_json is not None:
     with open(args.shape_color_combos_json, 'r') as f:
