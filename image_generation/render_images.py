@@ -305,7 +305,7 @@ def render_scene(args,
 
   # Now make some random objects
   objects, blender_objects = (None, None)
-  while objects is not None and blender_objects is not None:
+  while objects is None and blender_objects is None:
       num_objects = random.randint(args.min_objects, args.max_objects)
       objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
 
