@@ -344,7 +344,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",4],["sphere",4]]
+  num_objects = [["duck",4],["sphere",0]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
@@ -359,7 +359,15 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   positions = []
   objects = []
   blender_objects = []
+  xrange = [-4,4]
+  yrange = [-4,4]
+  corners = [[xrange[0], yrange[0]],
+             [xrange[0], yrange[1]],
+             [xrange[1], yrange[0]],
+             [xrange[1], yrange[1]],]
+  i=-1
   while len(objects_to_place) > 0:
+  i+=1
   #for i in range(num_objects):
     # Choose a random size
     size_name, r = random.choice(size_mapping)
@@ -376,8 +384,15 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
         for obj in blender_objects:
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
-      x = random.uniform(-5, 5)
-      y = random.uniform(-5, 5)
+
+      x = corners[i][0]
+      y = corners[i][1]
+
+
+      #x = random.uniform(-5, 5)
+      #y = random.uniform(-5, 5)
+
+
       # Check to make sure the new object is further than min_dist from all
       # other objects, and further than margin along the four cardinal directions
       dists_good = True
