@@ -344,7 +344,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",5],["sphere",2]]
+  num_objects = [["duck",7],["sphere",7]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
@@ -376,7 +376,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
         for obj in blender_objects:
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
-      x = random.uniform(-2, 2)
+      x = random.uniform(-3, 3)
       y = random.uniform(-5, 3)
       # Check to make sure the new object is further than min_dist from all
       # other objects, and further than margin along the four cardinal directions
@@ -407,8 +407,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     if shape_color_combos is None:
       obj_name_out = objects_to_place.pop()
       print ("0000: ", object_mapping)
-      obj_name = properties['shapes'][obj_name_out]
-      #obj_name, obj_name_out = random.choice(object_mapping)
+      obj_name = object_mapping[obj_name_out]
+      obj_name, obj_name_out = random.choice(object_mapping)
       print ("!!",obj_name,obj_name_out)
       color_name, rgba = random.choice(list(color_name_to_rgba.items()))
     else:
