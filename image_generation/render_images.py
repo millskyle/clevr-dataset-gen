@@ -345,7 +345,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",4],["sphere",0]]
+  num_objects = [["duck",4],["sphere",4]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
@@ -389,11 +389,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       x = corners[i][0]
       y = corners[i][1]
 
-      print (x, y, "POSITION")
-
-
-      #x = random.uniform(-5, 5)
-      #y = random.uniform(-5, 5)
+      x = random.uniform(*xrange)
+      y = random.uniform(*yrange)
 
 
       # Check to make sure the new object is further than min_dist from all
