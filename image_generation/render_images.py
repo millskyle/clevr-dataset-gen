@@ -386,8 +386,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
 
-      x = corners[i][0]
-      y = corners[i][1]
+      #x = corners[i][0]
+      #y = corners[i][1]
 
       x = random.uniform(*xrange)
       y = random.uniform(*yrange)
