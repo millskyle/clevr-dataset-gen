@@ -367,7 +367,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
              [xrange[1], yrange[1]],]
   i=-1
   while len(objects_to_place) > 0:
-  i+=1
+    i+=1
   #for i in range(num_objects):
     # Choose a random size
     size_name, r = random.choice(size_mapping)
