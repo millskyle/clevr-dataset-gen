@@ -74,7 +74,7 @@ def set_layer(obj, layer_idx):
     obj.layers[i] = (i == layer_idx)
 
 
-def add_object(object_dir, name, scale, loc, theta=0):
+def add_object(object_dir, name, scale, loc, theta=0, zshift=0.0):
   """
   Load an object from a file. We assume that in the directory object_dir, there
   is a file named "$name.blend" which contains a single object named "$name"
@@ -103,7 +103,7 @@ def add_object(object_dir, name, scale, loc, theta=0):
   bpy.context.scene.objects.active = bpy.data.objects[new_name]
   bpy.context.object.rotation_euler[2] = theta
   bpy.ops.transform.resize(value=(scale, scale, scale))
-  bpy.ops.transform.translate(value=(x, y, scale))
+  bpy.ops.transform.translate(value=(x, y, scale+zshift))
 
 
 def load_materials(material_dir):
@@ -169,4 +169,3 @@ def add_material(name, **properties):
       group_node.outputs['Shader'],
       output_node.inputs['Surface'],
   )
-
