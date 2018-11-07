@@ -407,8 +407,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     if shape_color_combos is None:
       obj_name_out = objects_to_place.pop()
       print ("0000: ", object_mapping)
-      obj_name = object_mapping[obj_name_out]
-      obj_name, obj_name_out = random.choice(object_mapping)
+      obj_name = properties['shapes'][obj_name_out]
+      #obj_name, obj_name_out = random.choice(object_mapping)
       print ("!!",obj_name,obj_name_out)
       color_name, rgba = random.choice(list(color_name_to_rgba.items()))
     else:
