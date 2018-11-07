@@ -345,7 +345,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",4],["sphere",4]]
+  num_objects = [["duck",4],["sphere",2]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
