@@ -360,7 +360,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   positions = []
   objects = []
   blender_objects = []
-  xrange = [-2.0,5.0]
+  xrange = [-3.0,3.0]
   yrange = [-3.0,3.0]
   corners = [[xrange[0], yrange[0]],
              [xrange[0], yrange[1]],
