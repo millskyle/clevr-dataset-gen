@@ -1,8 +1,8 @@
 {
   "shapes": {
-    "cube": "SmoothCube_v2",
     "sphere": "Sphere",
-    "cylinder": "SmoothCylinder"
+    "duck": "Rubber Duck"
+
   },
   "colors": {
     "gray": [87, 87, 87],

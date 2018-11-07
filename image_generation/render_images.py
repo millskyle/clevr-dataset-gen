@@ -367,7 +367,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera)
       x = random.uniform(-3, 3)
-      y = random.uniform(-3, 3)
+      y = random.uniform(-5, 3)
       # Check to make sure the new object is further than min_dist from all
       # other objects, and further than margin along the four cardinal directions
       dists_good = True
@@ -407,6 +407,9 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     if obj_name == 'Cube':
       r /= math.sqrt(2)
 
+    if obj_name == 'Rubber Duck':
+        r /= math.sqrt(2)
+
     # Choose random orientation for the object.
     theta = 360.0 * random.random()
 
@@ -417,15 +420,16 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     positions.append((x, y, r))
 
     # Attach a random material
-    mat_name, mat_name_out = random.choice(material_mapping)
-    utils.add_material(mat_name, Color=rgba)
+    if obj_name != 'Rubber Duck':
+        mat_name, mat_name_out = random.choice(material_mapping)
+        utils.add_material(mat_name, Color=rgba)
 
     # Record data about the object in the scene data structure
     pixel_coords = utils.get_camera_coords(camera, obj.location)
     objects.append({
       'shape': obj_name_out,
       'size': size_name,
-      'material': mat_name_out,
+      #'material': mat_name_out,
       '3d_coords': tuple(obj.location),
       'rotation': theta,
       'pixel_coords': pixel_coords,
