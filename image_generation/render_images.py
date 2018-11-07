@@ -359,7 +359,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   positions = []
   objects = []
   blender_objects = []
-  for i in range(num_objects):
+  while len(objects_to_place) > 0:
+  #for i in range(num_objects):
     # Choose a random size
     size_name, r = random.choice(size_mapping)
 
