@@ -68,7 +68,7 @@ parser.add_argument('--min_objects', default=3, type=int,
     help="The minimum number of objects to place in each scene")
 parser.add_argument('--max_objects', default=10, type=int,
     help="The maximum number of objects to place in each scene")
-parser.add_argument('--min_dist', default=0.05, type=float,
+parser.add_argument('--min_dist', default=0.10, type=float,
     help="The minimum allowed distance between object centers")
 parser.add_argument('--margin', default=0.4, type=float,
     help="Along all cardinal directions (left, right, front, back), all " +
@@ -345,7 +345,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",4],["sphere",0]]
+  num_objects = [["duck",4],["sphere",4]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
