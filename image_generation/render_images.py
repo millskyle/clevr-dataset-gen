@@ -351,9 +351,6 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       for i in range(num):
           objects_to_place.append(obj_name)
 
-  print (objects_to_place)
-  dsadasfgfds()
-
   shape_color_combos = None
   if args.shape_color_combos_json is not None:
     with open(args.shape_color_combos_json, 'r') as f:
@@ -407,6 +404,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
 
     # Choose random color and shape
     if shape_color_combos is None:
+      obj_name_out = objects_to_place.pop()
+      obj_name = object_mapping[obj_name_out]
       obj_name, obj_name_out = random.choice(object_mapping)
       print ("!!",obj_name,obj_name_out)
       color_name, rgba = random.choice(list(color_name_to_rgba.items()))
