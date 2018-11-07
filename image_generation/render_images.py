@@ -360,7 +360,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   positions = []
   objects = []
   blender_objects = []
-  xrange = [-5.0,2.0]
+  xrange = [-5.0,5.0]
   yrange = [-3.0,3.0]
   corners = [[xrange[0], yrange[0]],
              [xrange[0], yrange[1]],
@@ -386,11 +386,11 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
 
-      #x = corners[i][0]
-      #y = corners[i][1]
+      x = corners[i][0]
+      y = corners[i][1]
 
-      x = random.uniform(*xrange)
-      y = random.uniform(*yrange)
+      #x = random.uniform(*xrange)
+      #y = random.uniform(*yrange)
 
 
       # Check to make sure the new object is further than min_dist from all
