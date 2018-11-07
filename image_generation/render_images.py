@@ -392,8 +392,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       print (x, y, "POSITION")
 
 
-      #x = random.uniform(-5, 5)
-      #y = random.uniform(-5, 5)
+      x = random.uniform(*xrange)
+      y = random.uniform(*yrange)
 
 
       # Check to make sure the new object is further than min_dist from all
