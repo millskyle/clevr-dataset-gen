@@ -416,18 +416,20 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       obj_name = [k for k, v in object_mapping if v == obj_name_out][0]
       rgba = color_name_to_rgba[color_name]
 
+    zshift=0.0
     # For cube, adjust the size a bit
     if obj_name == 'Cube':
       r /= math.sqrt(2)
 
     if obj_name == 'Rubber Duck':
         r /= math.sqrt(2)
+        zshift=-1.0
 
     # Choose random orientation for the object.
     theta = 360.0 * random.random()
 
     # Actually add the object to the scene
-    utils.add_object(args.shape_dir, obj_name, r, (x, y), theta=theta)
+    utils.add_object(args.shape_dir, obj_name, r, (x, y), theta=theta, zshift=zshift)
     obj = bpy.context.object
     blender_objects.append(obj)
     positions.append((x, y, r))
