@@ -33,7 +33,7 @@ if INSIDE_BLENDER:
     import utils
   except ImportError as e:
     print("\nERROR")
-    print("Running render_images.py from Blender and cannot import utils.py.") 
+    print("Running render_images.py from Blender and cannot import utils.py.")
     print("You may need to add a .pth file to the site-packages of Blender's")
     print("bundled python with a command like this:\n")
     print("echo $PWD >> $BLENDER/$VERSION/python/lib/python3.5/site-packages/clevr.pth")
@@ -168,7 +168,7 @@ def main(args):
     os.makedirs(args.output_scene_dir)
   if args.save_blendfiles == 1 and not os.path.isdir(args.output_blend_dir):
     os.makedirs(args.output_blend_dir)
-  
+
   all_scene_paths = []
   for i in range(args.num_images):
     img_path = img_template % (i + args.start_idx)
@@ -177,9 +177,7 @@ def main(args):
     blend_path = None
     if args.save_blendfiles == 1:
       blend_path = blend_template % (i + args.start_idx)
-    num_objects = random.randint(args.min_objects, args.max_objects)
     render_scene(args,
-      num_objects=num_objects,
       output_index=(i + args.start_idx),
       output_split=args.split,
       output_image=img_path,
@@ -208,7 +206,6 @@ def main(args):
 
 
 def render_scene(args,
-    num_objects=5,
     output_index=0,
     output_split='none',
     output_image='render.png',
@@ -307,7 +304,10 @@ def render_scene(args,
       bpy.data.objects['Lamp_Fill'].location[i] += rand(args.fill_light_jitter)
 
   # Now make some random objects
-  objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
+  objects, blender_objects = (None, None)
+  while objects is not None and blender_objects is not None:
+      num_objects = random.randint(args.min_objects, args.max_objects)
+      objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
 
   # Render the scene and dump the scene data structure
   scene_struct['objects'] = objects
@@ -326,11 +326,13 @@ def render_scene(args,
     bpy.ops.wm.save_as_mainfile(filepath=output_blendfile)
 
 
-def add_random_objects(scene_struct, num_objects, args, camera):
+def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   """
   Add random objects to the current blender scene
   """
-
+  if attempts > 10:
+      print ("Tried 10 times to place {} objects and failed.  Giving up hope and moving on.".format(num_objects))
+      return None, None
   # Load the property file
   with open(args.properties_json, 'r') as f:
     properties = json.load(f)
@@ -365,7 +367,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
       if num_tries > args.max_retries:
         for obj in blender_objects:
           utils.delete_object(obj)
-        return add_random_objects(scene_struct, num_objects, args, camera)
+        return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
       x = random.uniform(-3, 3)
       y = random.uniform(-5, 3)
       # Check to make sure the new object is further than min_dist from all
@@ -396,6 +398,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     # Choose random color and shape
     if shape_color_combos is None:
       obj_name, obj_name_out = random.choice(object_mapping)
+      print ("!!",obj_name,obj_name_out)
       color_name, rgba = random.choice(list(color_name_to_rgba.items()))
     else:
       obj_name_out, color_choices = random.choice(shape_color_combos)
@@ -444,7 +447,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     print('Some objects are occluded; replacing objects')
     for obj in blender_objects:
       utils.delete_object(obj)
-    return add_random_objects(scene_struct, num_objects, args, camera)
+    return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
 
   return objects, blender_objects
 
@@ -452,7 +455,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
 def compute_all_relationships(scene_struct, eps=0.2):
   """
   Computes relationships between all pairs of objects in the scene.
-  
+
   Returns a dictionary mapping string relationship names to lists of lists of
   integers, where output[rel][i] gives a list of object indices that have the
   relationship rel with object i. For example if j is in output['left'][i] then
@@ -581,4 +584,3 @@ if __name__ == '__main__':
     print('arguments like this:')
     print()
     print('python render_images.py --help')
-
