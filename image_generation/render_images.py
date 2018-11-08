@@ -166,12 +166,13 @@ def main(args):
   img_template = '%s%%0%dd.png' % (prefix, num_digits)
   scene_template = '%s%%0%dd.json' % (prefix, num_digits)
   blend_template = '%s%%0%dd.blend' % (prefix, num_digits)
-  img_template = os.path.join(args.output_image_dir, img_template)
+  output_image_dir = args.output_image_dir + "/{}-{}/".format(args.num_ducks, args.num_balls)
+  img_template = os.path.join(output_image_dir, img_template)
   scene_template = os.path.join(args.output_scene_dir, scene_template)
   blend_template = os.path.join(args.output_blend_dir, blend_template)
 
-  if not os.path.isdir(args.output_image_dir):
-    os.makedirs(args.output_image_dir)
+  if not os.path.isdir(output_image_dir):
+    os.makedirs(output_image_dir)
   if not os.path.isdir(args.output_scene_dir):
     os.makedirs(args.output_scene_dir)
   if args.save_blendfiles == 1 and not os.path.isdir(args.output_blend_dir):
