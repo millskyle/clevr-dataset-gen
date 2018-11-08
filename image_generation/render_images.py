@@ -63,6 +63,14 @@ parser.add_argument('--shape_color_combos_json', default=None,
          "allowed color names for that shape. This allows rendering images " +
          "for CLEVR-CoGenT.")
 
+parser.add_argument('--num_ducks', default=1, type=int,
+    help="The number of ducks in the scene")
+
+parser.add_argument('--num_balls', default=1, type=int,
+    help="The number of balls in the scene")
+
+
+
 # Settings for objects
 parser.add_argument('--min_objects', default=3, type=int,
     help="The minimum number of objects to place in each scene")
@@ -272,7 +280,7 @@ def render_scene(args,
   # Figure out the left, up, and behind directions along the plane and record
   # them in the scene structure
   camera = bpy.data.objects['Camera']
-  camera.location.z += random.uniform(-3.,8.0)
+  camera.location.z += random.uniform(-3.,9.)
   plane_normal = plane.data.vertices[0].normal
   cam_behind = camera.matrix_world.to_quaternion() * Vector((0, 0, -1))
   cam_left = camera.matrix_world.to_quaternion() * Vector((-1, 0, 0))
@@ -345,7 +353,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",2],["sphere",2]]
+  num_objects = [["duck",args.num_ducks],["sphere",args.num_balls]]
 
   objects_to_place = []
   for obj_name, num in num_objects:
