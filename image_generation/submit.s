@@ -16,8 +16,8 @@ for balls in 0 1 2 3 4 5; do
 --height=256 \
 --width=256 \
 --use_gpu=1  \
---filename_prefix=$scene \
---num_images=100 \
+--filename_prefix=${scene}_${numducks}_${balls} \
+--num_images=1000 \
 --camera_jitter=1 \
 --base_scene_blendfile="./data/base_scenes/${scene}.blend" \
 --num_ducks=$numducks \
