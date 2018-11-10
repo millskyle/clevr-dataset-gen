@@ -10,6 +10,12 @@ import math, sys, random, argparse, json, os, tempfile
 from datetime import datetime as dt
 from collections import Counter
 
+import builtins
+def print(*args):
+    builtins.print(*args, file=sys.stderr)
+
+print("Starting...")
+
 """
 Renders random scenes using Blender, each with with a random number of objects;
 each object has a random size, position, color, and shape. Objects will be
@@ -76,9 +82,9 @@ parser.add_argument('--min_objects', default=3, type=int,
     help="The minimum number of objects to place in each scene")
 parser.add_argument('--max_objects', default=10, type=int,
     help="The maximum number of objects to place in each scene")
-parser.add_argument('--min_dist', default=0.10, type=float,
+parser.add_argument('--min_dist', default=0.25, type=float,
     help="The minimum allowed distance between object centers")
-parser.add_argument('--margin', default=0.05, type=float,
+parser.add_argument('--margin', default=0.4, type=float,
     help="Along all cardinal directions (left, right, front, back), all " +
          "objects will be at least this distance apart. This makes resolving " +
          "spatial relationships slightly less ambiguous.")
@@ -281,7 +287,6 @@ def render_scene(args,
   # Figure out the left, up, and behind directions along the plane and record
   # them in the scene structure
   camera = bpy.data.objects['Camera']
-  camera.location.z += random.uniform(-3.,9.)
   plane_normal = plane.data.vertices[0].normal
   cam_behind = camera.matrix_world.to_quaternion() * Vector((0, 0, -1))
   cam_left = camera.matrix_world.to_quaternion() * Vector((-1, 0, 0))
@@ -369,12 +374,12 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
   positions = []
   objects = []
   blender_objects = []
-  xrange = [-3.0,3.0]
-  yrange = [-3.0,3.0]
-  corners = [[xrange[0], yrange[0]],
-             [xrange[0], yrange[1]],
-             [xrange[1], yrange[0]],
-             [xrange[1], yrange[1]],]
+  x_range = [-2.5,2.5]
+  y_range = [-2.5,2.5]
+  corners = [[x_range[0], y_range[0]],
+             [x_range[0], y_range[1]],
+             [x_range[1], y_range[0]],
+             [x_range[1], y_range[1]],]
   i=-1
   while len(objects_to_place) > 0:
     i+=1
@@ -401,8 +406,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       #print (x, y, "POSITION")
 
 
-      x = random.uniform(*xrange)
-      y = random.uniform(*yrange)
+      x = random.uniform(*x_range)
+      y = random.uniform(*y_range)
 
 
       # Check to make sure the new object is further than min_dist from all
@@ -448,9 +453,12 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     if obj_name == 'Cube':
       r /= math.sqrt(2)
 
+    if obj_name=="Sphere":
+        zshift = -0.25*r
+
     if obj_name == 'Rubber Duck':
         r /= math.sqrt(2)
-        zshift=-1.0
+        zshift=-1.15
 
     # Choose random orientation for the object.
     theta = 360.0 * random.random()
