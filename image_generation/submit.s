@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -J ducky
-#SBATCH --gres=gpu:1
-#SBATCH -t 1:20:00
+
+#SBATCH -c 5
+#SBATCH -t 00:10:00
 
 module load blender
 
@@ -21,8 +22,8 @@ for scene in vancouver mountains lake vancouver2; do
 --base_scene_blendfile="./data/base_scenes/${scene}.blend" \
 --num_ducks=$numducks \
 --num_balls=$numballs
-)  & 
-#) > /dev/null 2>&1 & 
+#)  & 
+) > /dev/null 2>&1 & 
 #--save_blendfiles=1 \
 
 done

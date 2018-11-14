@@ -88,7 +88,7 @@ parser.add_argument('--margin', default=0.4, type=float,
     help="Along all cardinal directions (left, right, front, back), all " +
          "objects will be at least this distance apart. This makes resolving " +
          "spatial relationships slightly less ambiguous.")
-parser.add_argument('--min_pixels_per_object', default=200, type=int,
+parser.add_argument('--min_pixels_per_object', default=32, type=int,
     help="All objects will have at least this many visible pixels in the " +
          "final rendered images; this ensures that no objects are fully " +
          "occluded by other objects.")
@@ -283,6 +283,13 @@ def render_scene(args,
   if args.camera_jitter > 0:
     for i in range(3):
       bpy.data.objects['Camera'].location[i] += rand(args.camera_jitter)
+
+  try:
+    random_time = random.random()*10.0
+    print("Time randomized to {}".format(random_time))
+    bpy.data.objects["Ground"].modifiers["Ocean"].time = random_time
+  except Exception as e:
+    print("Error setting time:", e)
 
   # Figure out the left, up, and behind directions along the plane and record
   # them in the scene structure

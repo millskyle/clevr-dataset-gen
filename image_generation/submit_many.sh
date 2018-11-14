@@ -5,7 +5,7 @@ function ducksballs () {
     for run in c; do 
 #        for scene in vancouver mountains vancouver2 lake; do
             node=$(echo -e "bumblebee\nstarscream\nshockwave\nratchet\narcee" | shuf | head -n 1)
-            sbatch -J ${run}${ducks}ducks -p cpu --nodelist=$node submit.s $ducks $balls $run
+            sbatch -J ${run}${ducks}ducks -p cpu submit.s $ducks $balls $run
  #       done
     done
 }
