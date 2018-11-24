@@ -16,18 +16,6 @@ def print(*args):
 
 print("Starting...")
 
-"""
-Renders random scenes using Blender, each with with a random number of objects;
-each object has a random size, position, color, and shape. Objects will be
-nonintersecting but may partially occlude each other. Output images will be
-written to disk as PNGs, and we will also write a JSON file for each image with
-ground-truth scene information.
-
-This file expects to be run from Blender like this:
-
-blender --background --python render_images.py -- [arguments to this script]
-"""
-
 INSIDE_BLENDER = True
 try:
   import bpy, bpy_extras
@@ -69,39 +57,12 @@ parser.add_argument('--shape_color_combos_json', default=None,
          "allowed color names for that shape. This allows rendering images " +
          "for CLEVR-CoGenT.")
 
-parser.add_argument('--num_ducks', default=1, type=int,
-    help="The number of ducks in the scene")
-
-parser.add_argument('--num_balls', default=1, type=int,
-    help="The number of balls in the scene")
-
-
-
-# Settings for objects
-parser.add_argument('--min_objects', default=3, type=int,
-    help="The minimum number of objects to place in each scene")
-parser.add_argument('--max_objects', default=10, type=int,
-    help="The maximum number of objects to place in each scene")
-parser.add_argument('--min_dist', default=0.25, type=float,
-    help="The minimum allowed distance between object centers")
-parser.add_argument('--margin', default=0.4, type=float,
-    help="Along all cardinal directions (left, right, front, back), all " +
-         "objects will be at least this distance apart. This makes resolving " +
-         "spatial relationships slightly less ambiguous.")
-parser.add_argument('--min_pixels_per_object', default=32, type=int,
-    help="All objects will have at least this many visible pixels in the " +
-         "final rendered images; this ensures that no objects are fully " +
-         "occluded by other objects.")
-parser.add_argument('--max_retries', default=50, type=int,
-    help="The number of times to try placing an object before giving up and " +
-         "re-placing all objects in the scene.")
-
 # Output settings
 parser.add_argument('--start_idx', default=0, type=int,
     help="The index at which to start for numbering rendered images. Setting " +
          "this to non-zero values allows you to distribute rendering across " +
          "multiple machines and recombine the results later.")
-parser.add_argument('--num_images', default=5, type=int,
+parser.add_argument('--num_images', default=1, type=int,
     help="The number of images to render")
 parser.add_argument('--filename_prefix', default='CLEVR',
     help="This prefix will be prepended to the rendered images and JSON scenes")
@@ -172,7 +133,7 @@ def main(args):
   img_template = '%s%%0%dd.png' % (prefix, num_digits)
   scene_template = '%s%%0%dd.json' % (prefix, num_digits)
   blend_template = '%s%%0%dd.blend' % (prefix, num_digits)
-  output_image_dir = args.output_image_dir + "/{}-{}/".format(args.num_ducks, args.num_balls)
+  output_image_dir = args.output_image_dir
   img_template = os.path.join(output_image_dir, img_template)
   scene_template = os.path.join(args.output_scene_dir, scene_template)
   blend_template = os.path.join(args.output_blend_dir, blend_template)
@@ -199,24 +160,6 @@ def main(args):
       output_scene=scene_path,
       output_blendfile=blend_path,
     )
-
-  # After rendering all images, combine the JSON files for each scene into a
-  # single JSON file.
-  all_scenes = []
-  for scene_path in all_scene_paths:
-    with open(scene_path, 'r') as f:
-      all_scenes.append(json.load(f))
-  output = {
-    'info': {
-      'date': args.date,
-      'version': args.version,
-      'split': args.split,
-      'license': args.license,
-    },
-    'scenes': all_scenes
-  }
-  with open(args.output_scene_file, 'w') as f:
-    json.dump(output, f)
 
 
 
@@ -274,7 +217,7 @@ def render_scene(args,
 
   # Put a plane on the ground so we can compute cardinal directions
   bpy.ops.mesh.primitive_plane_add(radius=5)
-  plane = bpy.context.object
+#KM  plane = bpy.context.object
 
   def rand(L):
     return 2.0 * L * (random.random() - 0.5)
@@ -284,68 +227,20 @@ def render_scene(args,
     for i in range(3):
       bpy.data.objects['Camera'].location[i] += rand(args.camera_jitter)
 
-  try:
-    random_time = random.random()*10.0
-    print("Time randomized to {}".format(random_time))
-    bpy.data.objects["Ground"].modifiers["Ocean"].time = random_time
-  except Exception as e:
-    print("Error setting time:", e)
-
-  # Figure out the left, up, and behind directions along the plane and record
-  # them in the scene structure
   camera = bpy.data.objects['Camera']
-  plane_normal = plane.data.vertices[0].normal
-  cam_behind = camera.matrix_world.to_quaternion() * Vector((0, 0, -1))
-  cam_left = camera.matrix_world.to_quaternion() * Vector((-1, 0, 0))
-  cam_up = camera.matrix_world.to_quaternion() * Vector((0, 1, 0))
-  plane_behind = (cam_behind - cam_behind.project(plane_normal)).normalized()
-  plane_left = (cam_left - cam_left.project(plane_normal)).normalized()
-  plane_up = cam_up.project(plane_normal).normalized()
-
-  # Delete the plane; we only used it for normals anyway. The base scene file
-  # contains the actual ground plane.
-  utils.delete_object(plane)
-
-  # Save all six axis-aligned directions in the scene struct
-  scene_struct['directions']['behind'] = tuple(plane_behind)
-  scene_struct['directions']['front'] = tuple(-plane_behind)
-  scene_struct['directions']['left'] = tuple(plane_left)
-  scene_struct['directions']['right'] = tuple(-plane_left)
-  scene_struct['directions']['above'] = tuple(plane_up)
-  scene_struct['directions']['below'] = tuple(-plane_up)
-
-  # Add random jitter to lamp positions
-  if args.key_light_jitter > 0:
-    for i in range(3):
-      bpy.data.objects['Lamp_Key'].location[i] += rand(args.key_light_jitter)
-  if args.back_light_jitter > 0:
-    for i in range(3):
-      bpy.data.objects['Lamp_Back'].location[i] += rand(args.back_light_jitter)
-  if args.fill_light_jitter > 0:
-    for i in range(3):
-      bpy.data.objects['Lamp_Fill'].location[i] += rand(args.fill_light_jitter)
 
   # Now make some random objects
   objects, blender_objects = (None, None)
   while objects is None and blender_objects is None:
-      num_objects = random.randint(args.min_objects, args.max_objects)
+      num_objects = 1 #KM random.randint(args.min_objects, args.max_objects)
       objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
 
+
   # Render the scene and dump the scene data structure
-  scene_struct['objects'] = objects
-  scene_struct['relationships'] = compute_all_relationships(scene_struct)
   while True:
-    try:
-      bpy.ops.render.render(write_still=True)
+      print("RENDERING")
+      bpy.ops.render.render(animation=False, write_still=True)
       break
-    except Exception as e:
-      print(e)
-
-  with open(output_scene, 'w') as f:
-    json.dump(scene_struct, f, indent=2)
-
-  if output_blendfile is not None:
-    bpy.ops.wm.save_as_mainfile(filepath=output_blendfile)
 
 
 def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
@@ -366,7 +261,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     object_mapping = [(v, k) for k, v in properties['shapes'].items()]
     size_mapping = list(properties['sizes'].items())
 
-  num_objects = [["duck",args.num_ducks],["sphere",args.num_balls]]
+  num_objects = [["duck",1],]
 
   objects_to_place = []
   for obj_name, num in num_objects:
@@ -398,49 +293,9 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     # objects and that we are more than the desired margin away from all existing
     # objects along all cardinal directions.
     num_tries = 0
-    while True:
-      # If we try and fail to place an object too many times, then delete all
-      # the objects in the scene and start over.
-      num_tries += 1
-      if num_tries > args.max_retries:
-        for obj in blender_objects:
-          utils.delete_object(obj)
-        return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
+    x = 0.0 #KM  random.uniform(*x_range)
+    y = 0.0 #KM random.uniform(*y_range)
 
-      #x = corners[i][0]
-      #y = corners[i][1]
-
-      #print (x, y, "POSITION")
-
-
-      x = random.uniform(*x_range)
-      y = random.uniform(*y_range)
-
-
-      # Check to make sure the new object is further than min_dist from all
-      # other objects, and further than margin along the four cardinal directions
-      dists_good = True
-      margins_good = True
-      for (xx, yy, rr) in positions:
-        dx, dy = x - xx, y - yy
-        dist = math.sqrt(dx * dx + dy * dy)
-        if dist - r - rr < args.min_dist:
-          dists_good = False
-          break
-        for direction_name in ['left', 'right', 'front', 'behind']:
-          direction_vec = scene_struct['directions'][direction_name]
-          assert direction_vec[2] == 0
-          margin = dx * direction_vec[0] + dy * direction_vec[1]
-          if 0 < margin < args.margin:
-            print(margin, args.margin, direction_name)
-            print('BROKEN MARGIN!')
-            margins_good = False
-            break
-        if not margins_good:
-          break
-
-      if dists_good and margins_good:
-        break
 
     # Choose random color and shape
     if shape_color_combos is None:
@@ -481,27 +336,27 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
         mat_name, mat_name_out = random.choice(material_mapping)
         utils.add_material(mat_name, Color=rgba)
 
-    # Record data about the object in the scene data structure
-    pixel_coords = utils.get_camera_coords(camera, obj.location)
-    objects.append({
-      'shape': obj_name_out,
-      'size': size_name,
-      #'material': mat_name_out,
-      '3d_coords': tuple(obj.location),
-      'rotation': theta,
-      'pixel_coords': pixel_coords,
-      'color': color_name,
-    })
-
-  # Check that all objects are at least partially visible in the rendered image
-  all_visible = check_visibility(blender_objects, args.min_pixels_per_object)
-  if not all_visible:
-    # If any of the objects are fully occluded then start over; delete all
-    # objects from the scene and place them all again.
-    print('Some objects are occluded; replacing objects')
-    for obj in blender_objects:
-      utils.delete_object(obj)
-    return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
+#KM     # Record data about the object in the scene data structure
+#KM     pixel_coords = utils.get_camera_coords(camera, obj.location)
+#KM     objects.append({
+#KM       'shape': obj_name_out,
+#KM       'size': size_name,
+#KM       #'material': mat_name_out,
+#KM       '3d_coords': tuple(obj.location),
+#KM       'rotation': theta,
+#KM       'pixel_coords': pixel_coords,
+#KM       'color': color_name,
+#KM     })
+#KM 
+#KM   # Check that all objects are at least partially visible in the rendered image
+#KM   all_visible = check_visibility(blender_objects, args.min_pixels_per_object)
+#KM   if not all_visible:
+#KM     # If any of the objects are fully occluded then start over; delete all
+#KM     # objects from the scene and place them all again.
+#KM     print('Some objects are occluded; replacing objects')
+#KM     for obj in blender_objects:
+#KM       utils.delete_object(obj)
+#KM     return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
 
   return objects, blender_objects
 
