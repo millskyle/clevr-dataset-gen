@@ -20,6 +20,7 @@ INSIDE_BLENDER = True
 try:
   import bpy, bpy_extras
   from mathutils import Vector
+  import mathutils
 except ImportError as e:
   INSIDE_BLENDER = False
 if INSIDE_BLENDER:
@@ -106,14 +107,6 @@ parser.add_argument('--width', default=320, type=int,
     help="The width (in pixels) for the rendered images")
 parser.add_argument('--height', default=240, type=int,
     help="The height (in pixels) for the rendered images")
-parser.add_argument('--key_light_jitter', default=1.0, type=float,
-    help="The magnitude of random jitter to add to the key light position.")
-parser.add_argument('--fill_light_jitter', default=1.0, type=float,
-    help="The magnitude of random jitter to add to the fill light position.")
-parser.add_argument('--back_light_jitter', default=1.0, type=float,
-    help="The magnitude of random jitter to add to the back light position.")
-parser.add_argument('--camera_jitter', default=0.5, type=float,
-    help="The magnitude of random jitter to add to the camera position")
 parser.add_argument('--render_num_samples', default=512, type=int,
     help="The number of samples to use when rendering. Larger values will " +
          "result in nicer images but will cause rendering to take longer.")
@@ -126,6 +119,28 @@ parser.add_argument('--render_tile_size', default=256, type=int,
          "quality of the rendered image but may affect the speed; CPU-based " +
          "rendering may achieve better performance using smaller tile sizes " +
          "while larger tile sizes may be optimal for GPU-based rendering.")
+
+
+
+def point_camera_to_origin(camera, focus_point=mathutils.Vector((0.0, 0.0, 0.0)), distance=10.0):
+    """
+    Focus the camera to a focus point and place the camera at a specific distance from that
+    focus point. The camera stays in a direct line with the focus point.
+
+    :param camera: the camera object
+    :type camera: bpy.types.object
+    :param focus_point: the point to focus on (default=``mathutils.Vector((0.0, 0.0, 0.0))``)
+    :type focus_point: mathutils.Vector
+    :param distance: the distance to keep to the focus point (default=``10.0``)
+    :type distance: float
+    """
+    looking_direction = camera.location - focus_point
+    rot_quat = looking_direction.to_track_quat('Z', 'Y')
+
+    camera.rotation_euler = rot_quat.to_euler()
+    camera.location = rot_quat * mathutils.Vector((0.0, 0.0, distance))
+
+
 
 def main(args):
   num_digits = 6
@@ -146,14 +161,16 @@ def main(args):
     os.makedirs(args.output_blend_dir)
 
   all_scene_paths = []
-  for i in range(args.num_images):
-    img_path = img_template % (i + args.start_idx)
+
+  from fibonacci_sphere import fibonacci_sphere
+  for i, point in enumerate(fibonacci_sphere(radius=6.0, samples=100, randomize=False)):
+
+    img_path = img_template % (i)
     scene_path = scene_template % (i + args.start_idx)
     all_scene_paths.append(scene_path)
     blend_path = None
-    if args.save_blendfiles == 1:
-      blend_path = blend_template % (i + args.start_idx)
     render_scene(args,
+      camera_position=point,
       output_index=(i + args.start_idx),
       output_split=args.split,
       output_image=img_path,
@@ -164,6 +181,7 @@ def main(args):
 
 
 def render_scene(args,
+    camera_position,
     output_index=0,
     output_split='none',
     output_image='render.png',
@@ -206,34 +224,21 @@ def render_scene(args,
   if args.use_gpu == 1:
     bpy.context.scene.cycles.device = 'GPU'
 
-  # This will give ground-truth information about the scene and its objects
-  scene_struct = {
-      'split': output_split,
-      'image_index': output_index,
-      'image_filename': os.path.basename(output_image),
-      'objects': [],
-      'directions': {},
-  }
-
   # Put a plane on the ground so we can compute cardinal directions
   bpy.ops.mesh.primitive_plane_add(radius=5)
 #KM  plane = bpy.context.object
 
-  def rand(L):
-    return 2.0 * L * (random.random() - 0.5)
-
-  # Add random jitter to camera position
-  if args.camera_jitter > 0:
-    for i in range(3):
-      bpy.data.objects['Camera'].location[i] += rand(args.camera_jitter)
-
   camera = bpy.data.objects['Camera']
+  #point_camera_to_origin(camera, focus_point=mathutils.Vector((0.0, 0.0, 0.0)), distance=4.0)
+  bpy.data.objects['Camera'].location[0] = camera_position[0]
+  bpy.data.objects['Camera'].location[1] = camera_position[1]
+  bpy.data.objects['Camera'].location[2] = camera_position[2]
 
   # Now make some random objects
   objects, blender_objects = (None, None)
   while objects is None and blender_objects is None:
       num_objects = 1 #KM random.randint(args.min_objects, args.max_objects)
-      objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
+      objects, blender_objects = add_random_objects(num_objects, args, camera)
 
 
   # Render the scene and dump the scene data structure
@@ -243,7 +248,7 @@ def render_scene(args,
       break
 
 
-def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
+def add_random_objects(num_objects, args, camera, attempts=0):
   """
   Add random objects to the current blender scene
   """
@@ -287,7 +292,6 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     i+=1
   #for i in range(num_objects):
     # Choose a random size
-    size_name, r = random.choice(size_mapping)
 
     # Try to place the object, ensuring that we don't intersect any existing
     # objects and that we are more than the desired margin away from all existing
@@ -295,6 +299,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     num_tries = 0
     x = 0.0 #KM  random.uniform(*x_range)
     y = 0.0 #KM random.uniform(*y_range)
+    r = 1.0
 
 
     # Choose random color and shape
@@ -310,20 +315,11 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       obj_name = [k for k, v in object_mapping if v == obj_name_out][0]
       rgba = color_name_to_rgba[color_name]
 
-    zshift=0.0
-    # For cube, adjust the size a bit
-    if obj_name == 'Cube':
-      r /= math.sqrt(2)
-
-    if obj_name=="Sphere":
-        zshift = -0.25*r
-
     if obj_name == 'Rubber Duck':
-        r /= math.sqrt(2)
-        zshift=-1.15
+        zshift=-2.85
 
     # Choose random orientation for the object.
-    theta = 360.0 * random.random()
+    theta = 0.0 #360.0 * random.random()
 
     # Actually add the object to the scene
     utils.add_object(args.shape_dir, obj_name, r, (x, y), theta=theta, zshift=zshift)
@@ -336,144 +332,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
         mat_name, mat_name_out = random.choice(material_mapping)
         utils.add_material(mat_name, Color=rgba)
 
-#KM     # Record data about the object in the scene data structure
-#KM     pixel_coords = utils.get_camera_coords(camera, obj.location)
-#KM     objects.append({
-#KM       'shape': obj_name_out,
-#KM       'size': size_name,
-#KM       #'material': mat_name_out,
-#KM       '3d_coords': tuple(obj.location),
-#KM       'rotation': theta,
-#KM       'pixel_coords': pixel_coords,
-#KM       'color': color_name,
-#KM     })
-#KM 
-#KM   # Check that all objects are at least partially visible in the rendered image
-#KM   all_visible = check_visibility(blender_objects, args.min_pixels_per_object)
-#KM   if not all_visible:
-#KM     # If any of the objects are fully occluded then start over; delete all
-#KM     # objects from the scene and place them all again.
-#KM     print('Some objects are occluded; replacing objects')
-#KM     for obj in blender_objects:
-#KM       utils.delete_object(obj)
-#KM     return add_random_objects(scene_struct, num_objects, args, camera, attempts=attempts+1)
-
   return objects, blender_objects
 
-
-def compute_all_relationships(scene_struct, eps=0.2):
-  """
-  Computes relationships between all pairs of objects in the scene.
-
-  Returns a dictionary mapping string relationship names to lists of lists of
-  integers, where output[rel][i] gives a list of object indices that have the
-  relationship rel with object i. For example if j is in output['left'][i] then
-  object j is left of object i.
-  """
-  all_relationships = {}
-  for name, direction_vec in scene_struct['directions'].items():
-    if name == 'above' or name == 'below': continue
-    all_relationships[name] = []
-    for i, obj1 in enumerate(scene_struct['objects']):
-      coords1 = obj1['3d_coords']
-      related = set()
-      for j, obj2 in enumerate(scene_struct['objects']):
-        if obj1 == obj2: continue
-        coords2 = obj2['3d_coords']
-        diff = [coords2[k] - coords1[k] for k in [0, 1, 2]]
-        dot = sum(diff[k] * direction_vec[k] for k in [0, 1, 2])
-        if dot > eps:
-          related.add(j)
-      all_relationships[name].append(sorted(list(related)))
-  return all_relationships
-
-
-def check_visibility(blender_objects, min_pixels_per_object):
-  """
-  Check whether all objects in the scene have some minimum number of visible
-  pixels; to accomplish this we assign random (but distinct) colors to all
-  objects, and render using no lighting or shading or antialiasing; this
-  ensures that each object is just a solid uniform color. We can then count
-  the number of pixels of each color in the output image to check the visibility
-  of each object.
-
-  Returns True if all objects are visible and False otherwise.
-  """
-  f, path = tempfile.mkstemp(suffix='.png')
-  object_colors = render_shadeless(blender_objects, path=path)
-  img = bpy.data.images.load(path)
-  p = list(img.pixels)
-  color_count = Counter((p[i], p[i+1], p[i+2], p[i+3])
-                        for i in range(0, len(p), 4))
-  os.remove(path)
-  if len(color_count) != len(blender_objects) + 1:
-    return False
-  for _, count in color_count.most_common():
-    if count < min_pixels_per_object:
-      return False
-  return True
-
-
-def render_shadeless(blender_objects, path='flat.png'):
-  """
-  Render a version of the scene with shading disabled and unique materials
-  assigned to all objects, and return a set of all colors that should be in the
-  rendered image. The image itself is written to path. This is used to ensure
-  that all objects will be visible in the final rendered scene.
-  """
-  render_args = bpy.context.scene.render
-
-  # Cache the render args we are about to clobber
-  old_filepath = render_args.filepath
-  old_engine = render_args.engine
-  old_use_antialiasing = render_args.use_antialiasing
-
-  # Override some render settings to have flat shading
-  render_args.filepath = path
-  render_args.engine = 'BLENDER_RENDER'
-  render_args.use_antialiasing = False
-
-  # Move the lights and ground to layer 2 so they don't render
-  utils.set_layer(bpy.data.objects['Lamp_Key'], 2)
-  utils.set_layer(bpy.data.objects['Lamp_Fill'], 2)
-  utils.set_layer(bpy.data.objects['Lamp_Back'], 2)
-  utils.set_layer(bpy.data.objects['Ground'], 2)
-
-  # Add random shadeless materials to all objects
-  object_colors = set()
-  old_materials = []
-  for i, obj in enumerate(blender_objects):
-    old_materials.append(obj.data.materials[0])
-    bpy.ops.material.new()
-    mat = bpy.data.materials['Material']
-    mat.name = 'Material_%d' % i
-    while True:
-      r, g, b = [random.random() for _ in range(3)]
-      if (r, g, b) not in object_colors: break
-    object_colors.add((r, g, b))
-    mat.diffuse_color = [r, g, b]
-    mat.use_shadeless = True
-    obj.data.materials[0] = mat
-
-  # Render the scene
-  bpy.ops.render.render(write_still=True)
-
-  # Undo the above; first restore the materials to objects
-  for mat, obj in zip(old_materials, blender_objects):
-    obj.data.materials[0] = mat
-
-  # Move the lights and ground back to layer 0
-  utils.set_layer(bpy.data.objects['Lamp_Key'], 0)
-  utils.set_layer(bpy.data.objects['Lamp_Fill'], 0)
-  utils.set_layer(bpy.data.objects['Lamp_Back'], 0)
-  utils.set_layer(bpy.data.objects['Ground'], 0)
-
-  # Set the render settings back to what they were
-  render_args.filepath = old_filepath
-  render_args.engine = old_engine
-  render_args.use_antialiasing = old_use_antialiasing
-
-  return object_colors
 
 
 if __name__ == '__main__':
