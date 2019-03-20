@@ -455,6 +455,8 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
       obj_name = [k for k, v in object_mapping if v == obj_name_out][0]
       rgba = color_name_to_rgba[color_name]
 
+
+    r *= args.width / 256. / 1.2
     zshift=0.0
     # For cube, adjust the size a bit
     if obj_name == 'Cube':
@@ -494,7 +496,7 @@ def add_random_objects(scene_struct, num_objects, args, camera, attempts=0):
     })
 
   # Check that all objects are at least partially visible in the rendered image
-  all_visible = check_visibility(blender_objects, args.min_pixels_per_object)
+  all_visible = check_visibility(blender_objects, args.min_pixels_per_object*(args.width/256)**2)
   if not all_visible:
     # If any of the objects are fully occluded then start over; delete all
     # objects from the scene and place them all again.
